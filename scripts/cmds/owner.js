@@ -20,12 +20,11 @@ module.exports = {
 		const ownAge = "『 ⩸_ 17 _⩸ 』";
 		const messenger = " //m.me/j/AbZAMeTomx5dm3W9/";
 		const authorFB = " //www.facebook.com/fahad.khan.87890";
-		const authorNumber = "018******51";
+		const authorNumber = "01813999051";
 		const Status = "⩸____⩸";
 		const urls = [
+"https://drive.google.com/uc?export=view&id=1mzJeualLnMS-wABThyCQFfJsX-2hMADG",
 "https://drive.google.com/uc?export=view&id=14M_Qx2OfCQhybST0tAzQ4QEqT7COD6Z1"
-"https://drive.google.com/uc?export=view&id=1wth7W_C2GroJWgcflWsG6C8W8pIGP-fH"
-"https://drive.google.com/uc?export=view&id=1LaA9AcTEbqf1BB_DG0jfOyHM8T8IQNNp"
 ];
 		const link = urls[Math.floor(Math.random() * urls.length)];
 		const now = moment().tz('Asia/Jakarta');
