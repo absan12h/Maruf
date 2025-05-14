@@ -3,7 +3,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const baseApiUrl = async () => {
     const base = await axios.get(
-        `https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json`,
+        `https://raw.githubusercontent.com/Blankid018/D1PT0/main/baseApiUrl.json`, `https://raw.githubusercontent.com/Mostakim0978/D1PT0/refs/heads/main/baseApiUrl.json`,
     );
     return base.data.api;
 };
@@ -13,7 +13,7 @@ module.exports = {
         name: "pin",
         aliases: ["pinterest"],
         version: "1.0",
-        author: "FAHAD",
+        author: "Dipto",
         countDown: 15,
         role: 0,
         shortDescription: "Pinterest Image Search",
@@ -31,14 +31,14 @@ module.exports = {
 
         if (!q || !length) {
             return api.sendMessage(
-                "❌| Wrong Format",
+                "🦆| Wrong Format",
                 event.threadID,
                 event.messageID,
             );
         }
 
         try {
-            const w = await api.sendMessage("Please wait...", event.threadID);
+            const w = await api.sendMessage("Please wait🦆.", event.threadID);
             const response = await axios.get(
                 `${await baseApiUrl()}/pinterest?search=${encodeURIComponent(q)}&limit=${encodeURIComponent(length)}`,
             );
@@ -74,7 +74,7 @@ module.exports = {
                 {
                     body: `
 ✅ | Here's Your Query Based images
-🐤 | Total Images Count: ${totalImagesCount}`,
+🦆 | Total Images Count: ${totalImagesCount}`,
                     attachment: diptoo,
                 },
                 event.threadID,
