@@ -21,7 +21,7 @@ module.exports = {
     },
     category: "system",
     guide: {
-      en: "Just type 'uptime', 'upt', or 'up'"
+      en: "Just type 'uptime3', 'upt3', or 'up3'"
     }
   },
 
@@ -30,7 +30,7 @@ module.exports = {
   onChat: async function ({ message, event, usersData, threadsData }) {
     const prefix = global.GoatBot.config.prefix;
     const body = (event.body || "").toLowerCase().trim();
-    const triggers = [`uptime`, `upt`, `up`, `${prefix}uptime`, `${prefix}upt`, `${prefix}up`];
+    const triggers = [`uptime3`, `upt3`, `up3`, `${prefix}uptime3`, `${prefix}upt`, `${prefix}up`];
     if (!triggers.includes(body)) return;
 
     try {
@@ -55,7 +55,7 @@ module.exports = {
       const currentTime = moment.tz("Asia/Dhaka").format("DD/MM/YYYY || HH:mm:ss");
 
       // Create image
-      const background = await loadImage("https://i.imgur.com/ACQ8wF7.jpeg");
+      const background = await loadImage("https://i.imgur.com/hVjs2rm.jpeg");
       const canvas = createCanvas(1000, 500);
       const ctx = canvas.getContext("2d");
 
@@ -102,7 +102,7 @@ module.exports = {
       fs.unlinkSync(imagePath);
     } catch (e) {
       console.error(e);
-      message.reply("🦆 An error occurred while generating uptime.");
+      message.reply("❌ An error occurred while generating uptime.");
     }
   }
 };
