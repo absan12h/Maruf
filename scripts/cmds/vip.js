@@ -5,7 +5,7 @@ module.exports = {
   config: {
     name: "vip",
     version: "2.1",
-    author: "N/A",
+    author: "Amit Max ⚡",
     role: 2,
     shortDescription: "VIP system with message feature",
     category: "admin",
