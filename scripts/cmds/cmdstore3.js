@@ -4,8 +4,8 @@ const cmdUrlsJson = "https://raw.githubusercontent.com/mahmudx7/exe/main/CMDS.js
 const ITEMS_PER_PAGE = 10;
 
 module.exports.config = {
-  name: "cmdstore2",
-  aliases: ["cmds2", "cs2"],
+  name: "cmdstore3",
+  aliases: ["cmds3", "cs3"],
   author: "MahMUD",
   role: 0,
   version: "1.7",
