@@ -1,146 +1,89 @@
 const axios = require("axios");
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
 const ytSearch = require("yt-search");
-const https = require("https");
-const ytdl = require("ytdl-core");
 
-function deleteAfterTimeout(filePath, timeout = 15000) {
-  setTimeout(() => {
-    if (fs.existsSync(filePath)) {
-      fs.unlink(filePath, (err) => {
-        if (!err) {
-          console.log(`🦆 Deleted file: ${filePath}`);
-        } else {
-          console.error(`📛 Error deleting file: ${filePath}`);
-        }
-      });
-    }
-  }, timeout);
+const CACHE_FOLDER = path.join(__dirname, "cache");
+
+async function downloadAudio(videoId, filePath) {
+    const url = `https://mr-kshitizyt-hfhj.onrender.com/download?id=${videoId}`;
+    const writer = fs.createWriteStream(filePath);
+
+    const response = await axios({
+        url,
+        method: "GET",
+        responseType: "stream",
+    });
+
+    return new Promise((resolve, reject) => {
+        response.data.pipe(writer);
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+    });
 }
 
-async function getAPIUrl() {
-  try {
-    console.log("▶️ Fetching API URL from JSON...");
-    const response = await axios.get('https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json');
-    console.log("🦆 Successfully fetched API URL JSON:", response.data); // Debug log
-
-    // Ensure the response contains the expected 'YouTube' field
-    if (response.data && response.data.YouTube) {
-      return response.data.YouTube;
-    } else {
-      console.error("📛 YouTube field not found in the JSON.");
-      throw new Error("YouTube field not found in the JSON.");
+async function fetchAudioFromReply(api, event, message) {
+    const attachment = event.messageReply.attachments[0];
+    if (!attachment || (attachment.type !== "video" && attachment.type !== "audio")) {
+        throw new Error("Please reply to a valid video or audio attachment.");
     }
-  } catch (error) {
-    console.error("📛 Failed to fetch API URL:", error.message);
-    throw new Error("Failed to load API URL.");
-  }
+
+    const shortUrl = attachment.url;
+    const audioRecResponse = await axios.get(`https://audio-recon-ahcw.onrender.com/kshitiz?url=${encodeURIComponent(shortUrl)}`);
+    return audioRecResponse.data.title;
+}
+
+async function fetchAudioFromQuery(query) {
+    const searchResults = await ytSearch(query);
+    if (searchResults && searchResults.videos && searchResults.videos.length > 0) {
+        return searchResults.videos[0].videoId;
+    } else {
+        throw new Error("No results found for the given query.");
+    }
+}
+
+async function handleAudioCommand(api, event, args, message) {
+    api.setMessageReaction("🕢", event.messageID, () => {}, true);
+
+    try {
+        let videoId;
+        if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
+            const title = await fetchAudioFromReply(api, event, message);
+            videoId = await fetchAudioFromQuery(title);
+        } else if (args.length > 0) {
+            const query = args.join(" ");
+            videoId = await fetchAudioFromQuery(query);
+        } else {
+            message.reply("Please provide a query or reply to a valid video/audio attachment.");
+            return;
+        }
+
+        const filePath = path.join(CACHE_FOLDER, `${videoId}.mp3`);
+        await downloadAudio(videoId, filePath);
+
+        const audioStream = fs.createReadStream(filePath);
+        message.reply({ body: `🎵 Here is your audio:`, attachment: audioStream });
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+    } catch (error) {
+        console.error("Error:", error.message);
+        message.reply("An error occurred while processing your request.");
+    }
 }
 
 module.exports = {
-  config: {
-    name: "song",
-    aliases: ["music"],
-    version: "1.0",
-    author: "‎FAHAD",
-    countDown: 5,
-    role: 0,
-    shortDescription: "mp3 song from YouTube",
-    longDescription: "download mp3 song from YouTube using api",
-    category: "user",
-    guide: "{p}{n}song",
-  },
-  onStart: async function ({ api, event, args }) {
-    if (args.length === 0) {
-      return api.sendMessage("⛔ Please provide a song name to search.", event.threadID);
-    }
-
-    const songName = args.join(" ");
-    const processingMessage = await api.sendMessage(
-      `▶️ Searching for "${songName}"...`,
-      event.threadID,
-      null,
-      event.messageID
-    );
-
-    try {
-      const searchResults = await ytSearch(songName);
-      if (!searchResults || !searchResults.videos.length) {
-        throw new Error("No results found for your search query.");
-      }
-
-      const topResult = searchResults.videos[0];
-      const videoUrl = `https://www.youtube.com/watch?v=${topResult.videoId}`;
-
-      const downloadDir = path.join(__dirname, "cache");
-      if (!fs.existsSync(downloadDir)) {
-        fs.mkdirSync(downloadDir, { recursive: true });
-      }
-
-      const safeTitle = topResult.title.replace(/[^a-zA-Z0-9]/g, "_");
-      const downloadPath = path.join(downloadDir, `${safeTitle}.mp3`);
-
-      // Fetch API URL from the external JSON file
-      const apiUrl = await getAPIUrl();
-      console.log("🦆 Using API URL:", apiUrl); // Debug log
-      if (!apiUrl) {
-        throw new Error("No API URL found for YouTube.");
-      }
-
-      const downloadApiUrl = `${apiUrl}/download?url=${encodeURIComponent(videoUrl)}`;
-      let fileDownloaded = false;
-
-      try {
-        const downloadResponse = await axios.get(downloadApiUrl);
-        if (downloadResponse.data.file_url) {
-          const downloadUrl = downloadResponse.data.file_url.replace("http:", "https:");
-          const file = fs.createWriteStream(downloadPath);
-
-          await new Promise((resolve, reject) => {
-            https.get(downloadUrl, (response) => {
-              if (response.statusCode === 200) {
-                response.pipe(file);
-                file.on("finish", () => {
-                  file.close(resolve);
-                  fileDownloaded = true;
-                });
-              } else {
-                reject(new Error(`Failed to download file. Status code: ${response.statusCode}`));
-              }
-            }).on("error", reject);
-          });
-        }
-      } catch (apiError) {
-        console.error("🚫 API failed, switching to ytdl-core:", apiError.message);
-      }
-
-      if (!fileDownloaded) {
-        console.log("🚫 Using ytdl-core as a backup...");
-        const file = fs.createWriteStream(downloadPath);
-        await new Promise((resolve, reject) => {
-          ytdl(videoUrl, { filter: "audioonly", quality: "highestaudio" })
-            .pipe(file)
-            .on("finish", resolve)
-            .on("error", reject);
-        });
-      }
-
-      api.setMessageReaction("🦆", event.messageID, () => {}, true);
-
-      await api.sendMessage(
-        {
-          attachment: fs.createReadStream(downloadPath),
-          body: `📳 Title: ${topResult.title}\nHere is your song:`,
-        },
-        event.threadID,
-        event.messageID
-      );
-
-      deleteAfterTimeout(downloadPath, 15000);
-    } catch (error) {
-      console.error(`📛 Error: ${error.message}`);
-      api.sendMessage(`📛 Failed: ${error.message}`, event.threadID, event.messageID);
-    }
-  },
+    config: {
+        name: "song",
+        version: "1.0",
+        author: "It's Kshitiz",
+        countDown: 10,
+        role: 0,
+        shortDescription: "Download and send audio from YouTube.",
+        longDescription: "Download audio from YouTube based on a query or attachment.",
+        category: "music",
+        guide: "{p}audio [query] or reply to a video/audio attachment",
+    },
+    onStart: function ({ api, event, args, message }) {
+        return handleAudioCommand(api, event, args, message);
+    },
 };
